@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Favicon</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="/favicon_webpage.png">
+  <style>
+    body {
+      background-color: #0a0d14;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* Interactive Background Canvas */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Glassmorphism Styling */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    .dropzone {
+      border: 2px dashed rgba(99, 102, 241, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .dropzone:hover, .dropzone.drag-active {
+      border-color: #818cf8;
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative selection:bg-indigo-500 selection:text-white">
+
+  <!-- Background Particle Animation -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Main Container -->
+  <div class="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- Header -->
+    <header class="text-center mb-10">
+      <div class="inline-flex items-center space-x-3 mb-2">
+        <div class="p-3 bg-indigo-600/20 rounded-xl border border-indigo-500/30 text-indigo-400">
+          <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
+          Favicon Studio
+        </h1>
+      </div>
+      <p class="text-slate-400 text-sm md:text-base">Convert, resize, and optimize any image into a web-ready favicon.</p>
+    </header>
+
+    <!-- App Card -->
+    <main class="glass-card rounded-2xl p-6 md:p-8 space-y-8">
+      
+      <!-- Upload / Drop Area -->
+      <div id="dropzone" class="dropzone rounded-xl p-8 text-center cursor-pointer relative group">
+        <input type="file" id="fileInput" class="hidden" accept="image/*">
+        <div class="flex flex-col items-center justify-center space-y-3">
+          <div class="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+          </div>
+          <div>
+            <p class="text-base font-semibold text-slate-200">
+              Drag & Drop your image here, <span class="text-indigo-400 underline">browse</span>
+            </p>
+            <p class="text-xs text-slate-400 mt-1">or simply press <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">Ctrl + V</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">Cmd + V</kbd> to paste from clipboard</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview & Configuration Grid -->
+      <div id="editorSection" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-800 pt-8">
+        
+        <!-- Left Column: Source & Real-time Preview -->
+        <div class="space-y-4">
+          <label class="block text-sm font-medium text-slate-300">Original & Preview</label>
+          <div class="flex items-center justify-around bg-slate-900/60 p-4 rounded-xl border border-slate-800 min-h-[160px]">
+            <div class="text-center">
+              <span class="text-xs text-slate-400 block mb-2">Original</span>
+              <img id="sourcePreview" class="max-h-24 max-w-[100px] object-contain rounded border border-slate-700 mx-auto" alt="Source Preview">
+            </div>
+            <div class="text-slate-600 text-xl"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="text-center">
+              <span class="text-xs text-slate-400 block mb-2">Favicon Preview</span>
+              <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 inline-block">
+                <canvas id="faviconCanvas" class="mx-auto rounded"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Settings -->
+        <div class="space-y-5">
+          <!-- Size Selector -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Select Dimension</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" data-size="16" class="size-btn active py-2 px-3 text-xs rounded-lg border border-indigo-500 bg-indigo-600/20 text-indigo-300 font-semibold text-center transition">
+                16 × 16<br><span class="text-[10px] opacity-75 font-normal">(Tab Icon)</span>
+              </button>
+              <button type="button" data-size="32" class="size-btn py-2 px-3 text-xs rounded-lg border border-slate-700 bg-slate-800/50 text-slate-300 text-center hover:border-slate-600 transition">
+                32 × 32<br><span class="text-[10px] opacity-75 font-normal">(Desktop)</span>
+              </button>
+              <button type="button" data-size="180" class="size-btn py-2 px-3 text-xs rounded-lg border border-slate-700 bg-slate-800/50 text-slate-300 text-center hover:border-slate-600 transition">
+                180 × 180<br><span class="text-[10px] opacity-75 font-normal">(Mobile)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Format Selector -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Export Format</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" data-format="ico" class="format-btn active py-2 px-3 text-xs rounded-lg border border-indigo-500 bg-indigo-600/20 text-indigo-300 font-semibold text-center transition">.ICO</button>
+              <button type="button" data-format="png" class="format-btn py-2 px-3 text-xs rounded-lg border border-slate-700 bg-slate-800/50 text-slate-300 text-center hover:border-slate-600 transition">.PNG</button>
+              <button type="button" data-format="jpg" class="format-btn py-2 px-3 text-xs rounded-lg border border-slate-700 bg-slate-800/50 text-slate-300 text-center hover:border-slate-600 transition">.JPG</button>
+            </div>
+          </div>
+
+          <!-- File Name Input -->
+          <div>
+            <label for="filenameInput" class="block text-sm font-medium text-slate-300 mb-1">File Name</label>
+            <div class="flex items-center rounded-lg border border-slate-700 bg-slate-900 overflow-hidden focus-within:border-indigo-500">
+              <input type="text" id="filenameInput" value="favicon" class="w-full bg-transparent px-3 py-2 text-sm text-slate-100 outline-none">
+              <span id="formatExtLabel" class="px-3 py-2 text-xs text-slate-500 bg-slate-800/50 border-l border-slate-700">.ico</span>
+            </div>
+          </div>
+
+          <!-- Download Action -->
+          <button id="downloadBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-download"></i>
+            <span>Download Favicon</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- HTML Snippet Box Section -->
+      <div class="border-t border-slate-800 pt-6 space-y-3">
+        <label class="block text-sm font-medium text-slate-300">HTML Embed Code</label>
+        <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+          <code id="htmlCodeSnippet" class="text-xs md:text-sm font-mono text-emerald-400 overflow-x-auto whitespace-nowrap pr-2 custom-scrollbar">&lt;link rel="icon" type="image/x-icon" href="/favicon.ico"&gt;</code>
+          <button id="copyCodeBtn" title="Copy code to clipboard" class="p-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-lg transition flex items-center space-x-1 text-sm">
+            <i class="fa-regular fa-copy"></i>
+            <span id="copyText" class="text-xs hidden md:inline">Copy</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // State Variables
+    let loadedImage = null;
+    let selectedSize = 16;
+    let selectedFormat = 'ico';
+
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const editorSection = document.getElementById('editorSection');
+    const sourcePreview = document.getElementById('sourcePreview');
+    const faviconCanvas = document.getElementById('faviconCanvas');
+    const ctx = faviconCanvas.getContext('2d');
+    const filenameInput = document.getElementById('filenameInput');
+    const formatExtLabel = document.getElementById('formatExtLabel');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const htmlCodeSnippet = document.getElementById('htmlCodeSnippet');
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+
+    // --- File Drag & Drop / Input Handlers ---
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-active');
+    });
+
+    ['dragleave', 'dragend'].forEach(evt => {
+      dropzone.addEventListener(evt, () => dropzone.classList.remove('drag-active'));
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-active');
+      if (e.dataTransfer.files.length) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        processFile(e.target.files[0]);
+      }
+    });
+
+    // Clipboard Paste Listener
+    window.addEventListener('paste', (e) => {
+      const items = e.clipboardData.items;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          processFile(blob);
+          break;
+        }
+      }
+    });
+
+    function processFile(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedImage = img;
+          sourcePreview.src = event.target.result;
+          editorSection.classList.remove('hidden');
+          updateCanvasAndCode();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // --- Control Handlers ---
+    document.querySelectorAll('.size-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.size-btn').forEach(b => {
+          b.classList.remove('active', 'border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300', 'font-semibold');
+          b.classList.add('border-slate-700', 'bg-slate-800/50', 'text-slate-300');
+        });
+        btn.classList.add('active', 'border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300', 'font-semibold');
+        btn.classList.remove('border-slate-700', 'bg-slate-800/50', 'text-slate-300');
+        selectedSize = parseInt(btn.dataset.size);
+        updateCanvasAndCode();
+      });
+    });
+
+    document.querySelectorAll('.format-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.format-btn').forEach(b => {
+          b.classList.remove('active', 'border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300', 'font-semibold');
+          b.classList.add('border-slate-700', 'bg-slate-800/50', 'text-slate-300');
+        });
+        btn.classList.add('active', 'border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300', 'font-semibold');
+        btn.classList.remove('border-slate-700', 'bg-slate-800/50', 'text-slate-300');
+        selectedFormat = btn.dataset.format;
+        formatExtLabel.textContent = `.${selectedFormat}`;
+        updateCanvasAndCode();
+      });
+    });
+
+    filenameInput.addEventListener('input', updateSnippetCode);
+
+    function updateCanvasAndCode() {
+      if (!loadedImage) return;
+
+      // Set canvas render dimension
+      faviconCanvas.width = selectedSize;
+      faviconCanvas.height = selectedSize;
+
+      // Display styling size on screen
+      faviconCanvas.style.width = '64px';
+      faviconCanvas.style.height = '64px';
+
+      ctx.clearRect(0, 0, selectedSize, selectedSize);
+      ctx.drawImage(loadedImage, 0, 0, selectedSize, selectedSize);
+
+      updateSnippetCode();
+    }
+
+    function updateSnippetCode() {
+      const name = filenameInput.value.trim() || 'favicon';
+      let typeAttr = 'image/x-icon';
+      if (selectedFormat === 'png') typeAttr = 'image/png';
+      if (selectedFormat === 'jpg') typeAttr = 'image/jpeg';
+
+      htmlCodeSnippet.textContent = `<link rel="icon" type="${typeAttr}" href="/${name}.${selectedFormat}">`;
+    }
+
+    // --- Copy Code to Clipboard ---
+    copyCodeBtn.addEventListener('click', () => {
+      const textToCopy = htmlCodeSnippet.textContent;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const copyText = document.getElementById('copyText');
+        const icon = copyCodeBtn.querySelector('i');
+        
+        icon.className = 'fa-solid fa-check text-emerald-400';
+        copyText.textContent = 'Copied!';
+        copyText.classList.remove('hidden');
+
+        setTimeout(() => {
+          icon.className = 'fa-regular fa-copy';
+          copyText.textContent = 'Copy';
+        }, 2000);
+      });
+    });
+
+    // --- Download Handler ---
+    downloadBtn.addEventListener('click', () => {
+      if (!loadedImage) return;
+
+      const name = filenameInput.value.trim() || 'favicon';
+
+      if (selectedFormat === 'ico') {
+        // Generate Standard Windows/Browser ICO binary Blob
+        faviconCanvas.toBlob((pngBlob) => {
+          pngBlob.arrayBuffer().then(buffer => {
+            const pngBytes = new Uint8Array(buffer);
+            const icoHeader = new Uint8Array([0, 0, 1, 0, 1, 0]);
+            
+            let w = selectedSize >= 256 ? 0 : selectedSize;
+            let h = selectedSize >= 256 ? 0 : selectedSize;
+
+            const icoDir = new Uint8Array([
+              w, h, 0, 0, 1, 0, 32, 0,
+              pngBytes.length & 0xff,
+              (pngBytes.length >> 8) & 0xff,
+              (pngBytes.length >> 16) & 0xff,
+              (pngBytes.length >> 24) & 0xff,
+              22, 0, 0, 0
+            ]);
+
+            const icoBlob = new Blob([icoHeader, icoDir, pngBytes], { type: 'image/x-icon' });
+            triggerDownload(icoBlob, `${name}.ico`);
+          });
+        }, 'image/png');
+      } else if (selectedFormat === 'png') {
+        faviconCanvas.toBlob((blob) => {
+          triggerDownload(blob, `${name}.png`);
+        }, 'image/png');
+      } else if (selectedFormat === 'jpg') {
+        faviconCanvas.toBlob((blob) => {
+          triggerDownload(blob, `${name}.jpg`);
+        }, 'image/jpeg', 0.95);
+      }
+    });
+
+    function triggerDownload(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Particle Animation Background ---
+    const pCanvas = document.getElementById('particle-canvas');
+    const pCtx = pCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      pCanvas.width = window.innerWidth;
+      pCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * pCanvas.width;
+        this.y = Math.random() * pCanvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 1.8 + 0.8;
+        this.alpha = Math.random() * 0.4 + 0.2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
+      }
+      draw() {
+        pCtx.beginPath();
+        pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        pCtx.fillStyle = `rgba(129, 140, 248, ${this.alpha})`;
+        pCtx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.floor((pCanvas.width * pCanvas.height) / 15000);
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+    }
+    initParticles();
+
+    function animateParticles() {
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            pCtx.beginPath();
+            pCtx.moveTo(particles[i].x, particles[i].y);
+            pCtx.lineTo(particles[j].x, particles[j].y);
+            pCtx.strokeStyle = `rgba(99, 102, 241, ${0.12 * (1 - dist / 110)})`;
+            pCtx.lineWidth = 0.6;
+            pCtx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+  </script>
+</body>
+            </html>
