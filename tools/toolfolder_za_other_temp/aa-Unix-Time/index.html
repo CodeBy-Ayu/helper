@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Copy Unix Time</title>
+<style>
+  body{
+    font-family: Arial, sans-serif;
+    background:#111;
+    color:#00ffcc;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  .box{
+    text-align:center;
+    padding:30px 40px;
+    border:2px solid #00ffcc;
+    border-radius:12px;
+    box-shadow:0 0 20px #00ffcc55;
+  }
+  .time{
+    font-size:36px;
+    font-weight:bold;
+    margin-top:10px;
+    cursor:pointer;
+    user-select:all;
+  }
+  .time:hover{
+    color:#ffffff;
+  }
+  .msg{
+    margin-top:12px;
+    font-size:14px;
+    color:#7fffd4;
+    display:none;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <div>Click the number to copy</div>
+  <div class="time" id="current_time">0</div>
+  <div class="msg" id="msg">Copied ✔️</div>
+</div>
+
+<script>
+function updateTime(){
+  const current_time = Math.floor(Date.now() / 1000);
+  document.getElementById("current_time").textContent = current_time;
+}
+
+function copyTime(){
+  const time = document.getElementById("current_time").textContent;
+  navigator.clipboard.writeText(time);
+
+  const msg = document.getElementById("msg");
+  msg.style.display = "block";
+  setTimeout(()=>{ msg.style.display = "none"; }, 1200);
+}
+
+document.getElementById("current_time").addEventListener("click", copyTime);
+
+setInterval(updateTime, 1000);
+updateTime();
+</script>
+
+</body>
+</html>
